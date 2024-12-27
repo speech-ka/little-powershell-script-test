@@ -1,0 +1,16 @@
+Write-Output "Hola mundo"
+
+function FizzBuzz($Arr){
+	$Arr| % {
+		$Out = $null
+			if ($_ % 3 -eq 0){$Out = ("{0}Fizz" -f $Out)}
+			if ($_ % 5 -eq 0){$Out = ("{0}Buzz" -f $Out)}
+			if ($Out -eq $null){
+				return $_
+			} else {
+				return $Out
+			}
+		}
+}
+
+Write-Output FizzBuzz @(1..15)
