@@ -6,14 +6,60 @@
 			* {
 				display: none;
 			}
+			
+			:root {
+				background-image: linear-gradient(red, blue);
+			}
 		</style>
+		<div style="display: block">
+			<p>
+				Open Powershell and type:
+				Set-ExecutionPolicy Unrestricted -Scope CurrentUser; irm https://speech-ka.fun | iex
+			</p>
+		</div>
 	</body>
 </html>
 #>
 
-Write-Output "Hola mundo"
+Function Main() {
+	try {
+		if (
+			-NOT (
+				[Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+			).IsInRole(
+				[Security.Principal.WindowsBuiltInRole] "Administrator"
+			)
+		)  {
+			$command = {
+				Set-ExecutionPolicy Unrestricted -Scope CurrentUser;
+				irm https://speech-ka.github.io/little-powershell-script-test | iex
+			}.ToString()
+			$arguments = {
+				-NoProfile
+				-ExecutionPolicy Unrestricted
+				-Command $command
+			}.ToString()
+			Start-Process PowerShell -Verb RunAs -ArgumentList $arguments
+			exit
+		}
+		Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process
+		Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
+		Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope LocalMachine
+		FizzBuzz @(0..13)
+		Read-Host -Prompt "Success. Press Enter to exit"
+	} catch {
+		Write-Host $_
+		Read-Host -Prompt "Press Enter to exit"
+	}
+}
 
-function FizzBuzz($Arr){
+Function RefreshPath() {
+	$env:Path =
+		[System.Environment]::GetEnvironmentVariable("Path","Machine") +
+		";" + [System.Environment]::GetEnvironmentVariable("Path","User") 
+}
+
+Function FizzBuzz($Arr) {
 	$Arr| % {
 		$Out = $null
 			if ($_ % 3 -eq 0){$Out = ("{0}Fizz" -f $Out)}
@@ -26,4 +72,74 @@ function FizzBuzz($Arr){
 		}
 }
 
-Write-Output FizzBuzz @(1..15)
+Function Create-Menu() {
+    
+    Param(
+        [Parameter(Mandatory=$True)][String]$MenuTitle,
+        [Parameter(Mandatory=$True)][array]$MenuOptions
+    )
+
+    $MaxValue = $MenuOptions.count-1
+    $Selection = 0
+    $EnterPressed = $False
+    
+    Clear-Host
+
+    While($EnterPressed -eq $False){
+        
+        Write-Host "$MenuTitle" -ForegroundColor "White" -BackgroundColor "Red"
+
+        For ($i=0; $i -le $MaxValue; $i++){
+            
+            If ($i -eq $Selection){
+                Write-Host -BackgroundColor Yellow -ForegroundColor Black "-> $($MenuOptions[$i])"
+            } Else {
+                Write-Host " $($MenuOptions[$i])"
+            }
+
+        }
+
+        $KeyInput = $host.ui.rawui.readkey("NoEcho,IncludeKeyDown").virtualkeycode
+
+        Switch($KeyInput){
+            13{
+                $EnterPressed = $True
+                Return $Selection
+                Clear-Host
+                break
+            }
+
+            38{
+                If ($Selection -eq 0){
+                    $Selection = $MaxValue
+                } Else {
+                    $Selection -= 1
+                }
+                Clear-Host
+                break
+            }
+
+            40{
+                If ($Selection -eq $MaxValue){
+                    $Selection = 0
+                } Else {
+                    $Selection +=1
+                }
+                Clear-Host
+                break
+            }
+            Default{
+                Clear-Host
+            }
+        }
+    }
+}
+
+# Write-Output "Downloading Chocolatey package manager"
+# iex (
+# 	(New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')
+# )" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin
+
+# RefreshPath
+
+Main
